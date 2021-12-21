@@ -68,6 +68,13 @@ def process_param(**kwargs):
 
 def dag_python_operator(task_id: str, xxl_job_params: str = None, xxl_job_timeout: int = None,
                         provide_context: bool = None, retries: int = 1):
+    """返回PythonOperator task任务
+      task_id：任务ID
+      xxl_job_params：xxl_job参数
+      xxl_job_timeout：任务超时时间
+      provide_context：dag上下文context传参数，参数是否传递
+      retries：重试次数
+    """
     if provide_context is None:
         provide_context = True
     if xxl_job_timeout is None or xxl_job_timeout <= 0:
