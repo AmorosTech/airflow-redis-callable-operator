@@ -1,25 +1,30 @@
-import redis
-from redis import StrictRedis
 import json
 import time
 import os
+import logging
 
 from airflow.exceptions import AirflowException
 from airflow.operators.python import PythonOperator
+from redis_hook.redis_hook import RedisHook
 
-broker_url = os.environ.get('AIRFLOW__CELERY__BROKER_URL')
-print(" broker_url: {} ".format(broker_url))
-client = StrictRedis.from_url(url=broker_url, decode_responses=True)
+hive_server2: RedisHook = RedisHook(conn_id="airflow_redis")
+client = hive_server2.get_conn()
+# broker_url = os.environ.get('AIRFLOW__CELERY__BROKER_URL')
+# print(" broker_url: {} ".format(broker_url))
+# client = StrictRedis.from_url(url=broker_url, decode_responses=True)
+prefix = os.environ.get('AIRFLOW__CELERY__REDIS_PREFIX') or "airflow"
+redis_hash_name = os.environ.get('AIRFLOW__CELERY__REDIS_HAS_NAME') or "airflow"
 
 
 def receive_param(**kwargs):
     """通过api接口调度job获取接口参数"""
-    print("redis.version: {} ".format(redis.VERSION))
-    print(" broker_url: {} ".format(broker_url))
+    logging.info(" broker_url: {} ".format(hive_server2.get_uri()))
     if client is None:
         raise AirflowException('`redis not init`')
     try:
+        logging.info(" kwargs: %s", kwargs)
         start_time = time.time()
+        logging.info(" start_time: {} ".format(start_time))
         task_id = kwargs["task_instance"].task_id
         dag_id = kwargs["task_instance"].dag_id
         execution_date_str = kwargs["task_instance"].execution_date.strftime('%Y%m%dT%H%M%S')
@@ -27,42 +32,48 @@ def receive_param(**kwargs):
         key = dag_id + "_" + task_id + "_" + execution_date_str
         param["task_instance_key"] = key
         param["task_id"] = task_id
-        xxl_job_timeout = param['xxl_job_timeout']
+        task_wait = param['task_wait']
         redis_message = json.dumps(param)
-        print(" message: {}".format(redis_message))
-        client.publish("airflow-missions", redis_message)
+        logging.info(" topic: %s, message: %s", prefix + "_" + key, redis_message)
+        client.publish(prefix + "_" + key, redis_message)
         finish_flag = False
-        while not finish_flag:
-            now__diff_time = time.time() - start_time
-            if now__diff_time > xxl_job_timeout:
-                raise AirflowException('missions job: {}, task: {} 超时失败'.format(dag_id, task_id))
-                break
-            key_value = client.get(key)
-            print(" end: {} ".format(key_value))
-            if "true" == key_value:
-                client.delete(key)
-                break
-            elif "false" == key_value:
-                raise AirflowException('missions job: {}, task: {} 失败'.format(dag_id, task_id))
-                break
+        if task_wait is True:
+            task_timeout = param['task_timeout']
+            sleep_time = param['sleep_time']
+            while not finish_flag:
+                now__diff_time = time.time() - start_time
+                if now__diff_time > task_timeout:
+                    raise AirflowException('missions job: {}, task: {} 超时失败'.format(dag_id, task_id))
+                    break
+                key_value = client.hget(redis_hash_name, key)
+                logging.info(" end: {}, sleep_time: {} ".format(key_value, sleep_time))
+                if "true" == key_value:
+                    client.delete(key)
+                    break
+                elif "false" == key_value:
+                    raise AirflowException('missions job: {}, task: {} 失败'.format(dag_id, task_id))
+                    break
+                else:
+                    time.sleep(sleep_time)
     except KeyError:
         try:
             param = process_param(kwargs)
         except KeyError:
+            raise AirflowException(' job: {}, task: {} 失败'.format(dag_id, task_id))
             param = ""
-    print("参数为：{}".format(param))
+    logging.info("参数为：{}".format(param))
 
 
 def process_param(**kwargs):
     # """从Xcom中获取job参数"""
-    print("参数: {}".format(kwargs))
+    logging.info("参数: {}".format(kwargs))
     param = ""
     try:
-        print("参数: {}".format(kwargs["ti"]))
+        logging.info("参数: {}".format(kwargs["ti"]))
         param = kwargs["ti"].xcom_pull()
     except KeyError:
         param = ""
-    print("参数为：{}".format(param))
+    logging.info("参数为：{}".format(param))
     return param
 
 
