@@ -196,16 +196,15 @@ class DefaultCallableRedisOperator(RedisOperator):
                     if now__diff_time > task_timeout:
                         raise AirflowException(' job: {}, task: {} 超时失败'.format(dag_id, task_id))
                         break
+                    time.sleep(sleep_time)
                     key_value = client.hget(redis_hash_name, key)
                     logging.info(" end: {}, sleep_time: {} ".format(key_value, sleep_time))
                     if "true" == key_value:
-                        client.hdel(key)
+                        client.hdel(redis_hash_name, key)
                         break
                     elif "false" == key_value:
                         raise AirflowException(' job: {}, task: {} 失败'.format(dag_id, task_id))
                         break
-                    else:
-                        time.sleep(sleep_time)
         except KeyError:
             raise AirflowException(' job: {}, task: {} 失败'.format(dag_id, task_id))
             pass

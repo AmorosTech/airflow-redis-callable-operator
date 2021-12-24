@@ -45,6 +45,7 @@ def receive_param(**kwargs):
                 if now__diff_time > task_timeout:
                     raise AirflowException('missions job: {}, task: {} 超时失败'.format(dag_id, task_id))
                     break
+                time.sleep(sleep_time)
                 key_value = client.hget(redis_hash_name, key)
                 logging.info(" end: {}, sleep_time: {} ".format(key_value, sleep_time))
                 if "true" == key_value:
@@ -53,8 +54,6 @@ def receive_param(**kwargs):
                 elif "false" == key_value:
                     raise AirflowException('missions job: {}, task: {} 失败'.format(dag_id, task_id))
                     break
-                else:
-                    time.sleep(sleep_time)
     except KeyError:
         try:
             param = process_param(kwargs)
