@@ -5,7 +5,7 @@ from airflow import DAG
 
 # Operators; we need this to operate!
 from redis_operator.redis_operator import RedisOperator, DefaultCallableRedisOperator
-from callback_function import receive_param, dag_python_operator
+from example_func import receive_param, dag_python_operator
 
 # from callback_function import success_callback,failure_callback,receive_param
 # These args will get passed on to each operator

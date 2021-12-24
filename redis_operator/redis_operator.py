@@ -199,7 +199,7 @@ class DefaultCallableRedisOperator(RedisOperator):
                     key_value = client.hget(redis_hash_name, key)
                     logging.info(" end: {}, sleep_time: {} ".format(key_value, sleep_time))
                     if "true" == key_value:
-                        client.delete(key)
+                        client.hdel(key)
                         break
                     elif "false" == key_value:
                         raise AirflowException(' job: {}, task: {} 失败'.format(dag_id, task_id))
