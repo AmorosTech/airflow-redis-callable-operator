@@ -7,6 +7,15 @@ from airflow.models import BaseOperator
 from airflow.exceptions import AirflowException
 from redis_hook.redis_hook import RedisHook
 
+boolStr = {'True': True, 'true': True, 't': True, '1': True, 'False': False, 'false': False, 'f': False, '0': False}
+
+
+def get_bool_value(key):
+    try:
+        return boolStr[key]
+    except KeyError:
+        return False
+
 
 class RedisPublisherOperator(BaseOperator):
     """
@@ -40,7 +49,7 @@ class RedisPublisherOperator(BaseOperator):
                  *,
                  channel: str = os.environ.get('AIRFLOW__CELERY__REDIS_PREFIX') or None,
                  prefix: str = os.environ.get('AIRFLOW__CELERY__REDIS_PREFIX') or None,
-                 relate_instance: bool = os.environ.get('AIRFLOW__CELERY__REDIS_RELATE_INSTANCE') or False,
+                 relate_instance: bool = get_bool_value(os.environ.get('AIRFLOW__CELERY__REDIS_RELATE_INSTANCE')),
                  redis_type: int = 0,
                  redis_hash_name: str = os.environ.get('AIRFLOW__CELERY__REDIS_HAS_NAME') or None,
                  redis_conn_id: str = 'redis_default',
@@ -50,6 +59,7 @@ class RedisPublisherOperator(BaseOperator):
                  task_timeout: int = os.environ.get("AIRFLOW_TASK_TIMEOUT") or 1000 * 60 * 60,
                  sleep_time: int = os.environ.get("AIRFLOW_SLEEP_TIME") or 60,
                  **kwargs):
+        bool
         super().__init__(**kwargs)
         self.channel = channel
         self.prefix = prefix
