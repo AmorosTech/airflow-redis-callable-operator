@@ -59,7 +59,6 @@ class RedisPublisherOperator(BaseOperator):
                  task_timeout: int = os.environ.get("AIRFLOW_TASK_TIMEOUT") or 1000 * 60 * 60,
                  sleep_time: int = os.environ.get("AIRFLOW_SLEEP_TIME") or 60,
                  **kwargs):
-        bool
         super().__init__(**kwargs)
         self.channel = channel
         self.prefix = prefix
