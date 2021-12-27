@@ -47,7 +47,7 @@ class RedisPublisherOperator(BaseOperator):
 
     def __init__(self,
                  *,
-                 channel: str = os.environ.get('AIRFLOW__CELERY__REDIS_PREFIX') or None,
+                 channel: str = os.environ.get('AIRFLOW__CELERY__REDIS_CHANNEL') or None,
                  prefix: str = os.environ.get('AIRFLOW__CELERY__REDIS_PREFIX') or None,
                  relate_instance: bool = get_bool_value(os.environ.get('AIRFLOW__CELERY__REDIS_RELATE_INSTANCE')),
                  redis_type: int = 0,
