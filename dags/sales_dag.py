@@ -6,6 +6,7 @@ from airflow import DAG
 # Operators; we need this to operate!
 from redis_operator.redis_operator import RedisOperator, DefaultCallableRedisOperator
 from example_func import receive_param, dag_python_operator
+from redis_operator.RedisCallableOperator import RedisCallableOperator
 
 # from callback_function import success_callback,failure_callback,receive_param
 # These args will get passed on to each operator
@@ -30,33 +31,33 @@ with DAG(
         tags=['sales'],
 ) as dag:
     # t1, t2 and t3 are examples of tasks created by instantiating operators
-    t1 = RedisOperator(
+    t1 = RedisCallableOperator(
         task_id='DailyRetailBatchHandler',
         connection_id='airflow_redis',
         task_params='agentIds=levis startDate(date)=2021/12/02 endDate(date)=2021/12/09',  # 参数订阅消息，根据需要可以是json字符串
         python_callable=receive_param  # 回调方法
     )
 
-    t2 = DefaultCallableRedisOperator(
+    t2 = RedisCallableOperator(
         task_id='FaceRetailMatchHandler',
         task_params='agentIds=levis startDate(date)=2021/12/02 endDate(date)=2021/12/09',
         connection_id='airflow_redis',  # connection连接ID对应数据库表connection的conn_id
     )
 
-    t3 = DefaultCallableRedisOperator(
+    t3 = RedisCallableOperator(
         task_id='flowStayDetailHandler',
         task_params='agentIds=levis startDate(date)=2021/12/02 endDate(date)=2021/12/09',
         connection_id='airflow_redis',
     )
 
-    t4 = DefaultCallableRedisOperator(
+    t4 = RedisCallableOperator(
         task_id='storeDailyStatsHandler',
         task_params='agentIds=levis isSeven=false startDate(date)=2021/12/02 endDate(date)=2021/12/09 enableCustomer=false enableInv=false enableStaff=false realtime=false',
         task_timeout=600,  # 任务600秒没完成超时停止
         connection_id='airflow_redis',
     )
 
-    t5 = DefaultCallableRedisOperator(
+    t5 = RedisCallableOperator(
         task_id='endStatisticshandler',
         task_wait=False,
         connection_id='airflow_redis',

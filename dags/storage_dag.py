@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from airflow import DAG
 
 # Operators; we need this to operate!
-from redis_operator.RedisPublisherOperator import RedisPublisherOperator
+from redis_operator.RedisCallableOperator import RedisCallableOperator
 
 default_args = {
     'owner': 'airflow',
@@ -23,10 +23,10 @@ with DAG(
         tags=['storage'],
 ) as dag:
     # t1, t2 and t3 are examples of tasks created by instantiating operators
-    t1 = RedisPublisherOperator(
+    t1 = RedisCallableOperator(
         task_id='StorageBatchHandler',
         redis_conn_id='airflow_redis',
         depends_on_past=False,
-        task_params='agentIds=levis startDate(date)=2021/12/02 endDate(date)=2021/12/09',  # 参数订阅消息，根据需要可以是json字符串
+        task_params='agentIds=levis',  # 参数订阅消息，根据需要可以是json字符串
     )
     t1

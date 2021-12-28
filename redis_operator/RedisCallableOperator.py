@@ -17,7 +17,7 @@ def get_bool_value(key):
         return False
 
 
-class RedisPublisherOperator(BaseOperator):
+class RedisCallableOperator(BaseOperator):
     """
     Executes a Python callable
 
